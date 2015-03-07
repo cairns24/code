@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+	
+	<!-- jdbc模版  -->
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	
+	<!-- 数据源 -->
+	<bean id="dataSource"
+		class="com.mchange.v2.c3p0.ComboPooledDataSource"
+		destroy-method="close">
+		<!-- 指定连接数据库驱动 -->
+		<property name="driverClass" value="com.mysql.jdbc.Driver" />
+		<!-- 指定连接数据库url -->
+		<property name="jdbcUrl" value="jdbc:mysql://localhost:3306/mt_bi?useUnicode=true&amp;characterEncoding=UTF-8" />
+		<!-- 指定连接数据库用户名-->
+		<property name="user" value="root" />
+		<!-- 指定连接数据库密码-->
+		<property name="password" value="123" />
+	</bean>
+	
+		
+	<!-- 事务管理器 -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	
+	<!-- 事务模版 -->
+<!--	<bean id="transactionTemplate" class="org.springframework.transaction.support.TransactionTemplate">-->
+<!--		<property name="transactionManager" ref="transactionManger"></property>-->
+<!--	</bean>-->
+	
+<!--	<bean id="ehcache" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean">-->
+<!--		<property name="configLocation">-->
+<!--			<value>classpath:ehcache.xml</value>-->
+<!--		</property>-->
+<!--	</bean>-->	
+
+	
+	<!-- 定义事务管理拦截器 -->
+	<bean id="transactionInterceptor"
+		class="org.springframework.transaction.interceptor.TransactionInterceptor">
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="transactionAttributes">
+			<props>
+				<prop key="get*">PROPAGATION_REQUIRED,readOnly</prop>
+				<prop key="*">PROPAGATION_REQUIRED</prop>
+			</props>
+		</property>
+	</bean>
+	
+	
+		<!-- 定义代理自动管理事务 -->
+	<bean id="ProxyCreator" class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
+		<!-- 指定需要Spring管理事务的Bean -->
+		<property name="beanNames">
+			<list>
+				<value>loginService</value>
+<!-- 				<value>voteService</value> -->
+<!-- 				<value>voteContextService</value> -->
+<!-- 				<value>voterService</value> -->
+			</list>
+		</property>
+		<!-- 调用事务管理拦截器 -->
+		<property name="interceptorNames">
+			<list>
+				<value>transactionInterceptor</value>
+			</list>
+		</property>
+	</bean>
+	
+	
+	<bean id="login" class="com.cn.zk.access.action.UserLoginAction">
+		<property name="loginService" ref="loginService"></property>
+	</bean>
+	
+	<bean id="loginService" class="com.cn.zk.access.service.impl.LoginServiceImpl">
+		<property name="loginDao" ref="loginDao"></property>
+	</bean>
+	
+	
+	<bean id="loginDao" class="com.cn.zk.access.dao.impl.LoginDaoImpl">
+		<property name="jdbcTemplate" ref="jdbcTemplate"></property>
+	</bean>
+	
+	<bean id="cacheBeanPostProcess" class="com.cn.zk.cache.BeanPostProcessorImpl">
+		<property name="loginDao" ref="loginDao"></property>
+	</bean>
+	
+		
+	<bean id="accessManager" class="com.cn.zk.access.action.AccessManagerAction">
+		<property name="accessManagerService" ref="accessManagerService"></property>
+	</bean>
+	
+	<bean id="accessManagerService" class="com.cn.zk.access.service.impl.AccessManagerServiceImpl">
+		<property name="loginDao" ref="loginDao"></property>
+	</bean>
+	
+</beans>
